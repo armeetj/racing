@@ -1,4 +1,5 @@
 # standard library imports
+import os
 import itertools
 from copy import deepcopy
 from dataclasses import dataclass
@@ -34,7 +35,9 @@ class SpinupSacAgent(TrainingAgent):  # Adapted from Spinup
     lr_critic: float = 1e-3  # learning rate
     lr_entropy: float = 1e-3  # entropy autotuning (SAC v2)
     learn_entropy_coef: bool = True  # if True, SAC v2 is used, else, SAC v1 is used
-    target_entropy: float = None  # if None, the target entropy for SAC v2 is set automatically
+    target_entropy: float = (
+        None  # if None, the target entropy for SAC v2 is set automatically
+    )
     optimizer_actor: str = "adam"  # one of ["adam", "adamw", "sgd"]
     optimizer_critic: str = "adam"  # one of ["adam", "adamw", "sgd"]
     betas_actor: tuple = None  # for Adam and AdamW
@@ -57,9 +60,13 @@ class SpinupSacAgent(TrainingAgent):  # Adapted from Spinup
         self.optimizer_actor = self.optimizer_actor.lower()
         self.optimizer_critic = self.optimizer_critic.lower()
         if self.optimizer_actor not in ["adam", "adamw", "sgd"]:
-            logging.warning(f"actor optimizer {self.optimizer_actor} is not valid, defaulting to sgd")
+            logging.warning(
+                f"actor optimizer {self.optimizer_actor} is not valid, defaulting to sgd"
+            )
         if self.optimizer_critic not in ["adam", "adamw", "sgd"]:
-            logging.warning(f"critic optimizer {self.optimizer_critic} is not valid, defaulting to sgd")
+            logging.warning(
+                f"critic optimizer {self.optimizer_critic} is not valid, defaulting to sgd"
+            )
         if self.optimizer_actor == "adam":
             pi_optimizer_cls = Adam
         elif self.optimizer_actor == "adamw":
@@ -84,8 +91,13 @@ class SpinupSacAgent(TrainingAgent):  # Adapted from Spinup
         if self.l2_critic is not None:
             q_optimizer_kwargs["weight_decay"] = self.l2_critic
 
-        self.pi_optimizer = pi_optimizer_cls(self.model.actor.parameters(), **pi_optimizer_kwargs)
-        self.q_optimizer = q_optimizer_cls(itertools.chain(self.model.q1.parameters(), self.model.q2.parameters()), **q_optimizer_kwargs)
+        self.pi_optimizer = pi_optimizer_cls(
+            self.model.actor.parameters(), **pi_optimizer_kwargs
+        )
+        self.q_optimizer = q_optimizer_cls(
+            itertools.chain(self.model.q1.parameters(), self.model.q2.parameters()),
+            **q_optimizer_kwargs,
+        )
 
         # entropy coefficient:
 
@@ -97,7 +109,9 @@ class SpinupSacAgent(TrainingAgent):  # Adapted from Spinup
         if self.learn_entropy_coef:
             # Note: we optimize the log of the entropy coeff which is slightly different from the paper
             # as discussed in https://github.com/rail-berkeley/softlearning/issues/37
-            self.log_alpha = torch.log(torch.ones(1, device=self.device) * self.alpha).requires_grad_(True)
+            self.log_alpha = torch.log(
+                torch.ones(1, device=self.device) * self.alpha
+            ).requires_grad_(True)
             self.alpha_optimizer = Adam([self.log_alpha], lr=self.lr_entropy)
         else:
             self.alpha_t = torch.tensor(float(self.alpha)).to(self.device)
@@ -106,21 +120,41 @@ class SpinupSacAgent(TrainingAgent):  # Adapted from Spinup
         return self.model_nograd.actor
 
     def train(self, batch):
-
         o, a, r, o2, d, _ = batch
+
+        if "VISION" in os.environ and os.environ["VISION"] == "1":
+            o = (
+                torch.zeros_like(o[0]),
+                torch.zeros_like(o[1]),
+                torch.zeros_like(o[2]),
+                o[3],
+                o[4],
+                o[5],
+            )
+            o2 = (
+                torch.zeros_like(o2[0]),
+                torch.zeros_like(o2[1]),
+                torch.zeros_like(o2[2]),
+                o2[3],
+                o2[4],
+                o2[5],
+            )
+
+            # for i in range(3):
 
         pi, logp_pi = self.model.actor(o)
         # FIXME? log_prob = log_prob.reshape(-1, 1)
 
         # loss_alpha:
-
         loss_alpha = None
         if self.learn_entropy_coef:
             # Important: detach the variable from the graph
             # so we don't change it with other losses
             # see https://github.com/rail-berkeley/softlearning/issues/60
             alpha_t = torch.exp(self.log_alpha.detach())
-            loss_alpha = -(self.log_alpha * (logp_pi + self.target_entropy).detach()).mean()
+            loss_alpha = -(
+                self.log_alpha * (logp_pi + self.target_entropy).detach()
+            ).mean()
         else:
             alpha_t = self.alpha_t
 
@@ -150,8 +184,8 @@ class SpinupSacAgent(TrainingAgent):  # Adapted from Spinup
             backup = r + self.gamma * (1 - d) * (q_pi_targ - alpha_t * logp_a2)
 
         # MSE loss against Bellman backup
-        loss_q1 = ((q1 - backup)**2).mean()
-        loss_q2 = ((q2 - backup)**2).mean()
+        loss_q1 = ((q1 - backup) ** 2).mean()
+        loss_q2 = ((q2 - backup) ** 2).mean()
         loss_q = (loss_q1 + loss_q2) / 2  # averaged for homogeneity with REDQ
 
         self.q_optimizer.zero_grad()
@@ -185,7 +219,9 @@ class SpinupSacAgent(TrainingAgent):  # Adapted from Spinup
 
         # Finally, update target networks by polyak averaging.
         with torch.no_grad():
-            for p, p_targ in zip(self.model.parameters(), self.model_target.parameters()):
+            for p, p_targ in zip(
+                self.model.parameters(), self.model_target.parameters()
+            ):
                 # NB: We use an in-place operations "mul_", "add_" to update target
                 # params, as opposed to "mul" and "add", which would make new tensors.
                 p_targ.data.mul_(self.polyak)
@@ -193,7 +229,6 @@ class SpinupSacAgent(TrainingAgent):  # Adapted from Spinup
 
         # FIXME: remove debug info
         with torch.no_grad():
-
             if not cfg.DEBUG_MODE:
                 ret_dict = dict(
                     loss_actor=loss_pi.detach().item(),
@@ -295,6 +330,7 @@ class SpinupSacAgent(TrainingAgent):  # Adapted from Spinup
 
 # REDQ-SAC =============================================================================================================
 
+
 @dataclass(eq=0)
 class REDQSACAgent(TrainingAgent):
     observation_space: type
@@ -311,7 +347,9 @@ class REDQSACAgent(TrainingAgent):
     target_entropy: float = None  # if None, the target entropy is set automatically
     n: int = 10  # number of REDQ parallel Q networks
     m: int = 2  # number of REDQ randomly sampled target networks
-    q_updates_per_policy_update: int = 1  # in REDQ, this is the "UTD ratio" (20), this interplays with lr_actor
+    q_updates_per_policy_update: int = (
+        1  # in REDQ, this is the "UTD ratio" (20), this interplays with lr_actor
+    )
 
     model_nograd = cached_property(lambda self: no_grad(copy_shared(self.model)))
 
@@ -323,7 +361,9 @@ class REDQSACAgent(TrainingAgent):
         self.model = model.to(device)
         self.model_target = no_grad(deepcopy(self.model))
         self.pi_optimizer = Adam(self.model.actor.parameters(), lr=self.lr_actor)
-        self.q_optimizer_list = [Adam(q.parameters(), lr=self.lr_critic) for q in self.model.qs]
+        self.q_optimizer_list = [
+            Adam(q.parameters(), lr=self.lr_critic) for q in self.model.qs
+        ]
         self.criterion = torch.nn.MSELoss()
         self.loss_pi = torch.zeros((1,), device=device)
 
@@ -335,7 +375,9 @@ class REDQSACAgent(TrainingAgent):
             self.target_entropy = float(self.target_entropy)
 
         if self.learn_entropy_coef:
-            self.log_alpha = torch.log(torch.ones(1, device=self.device) * self.alpha).requires_grad_(True)
+            self.log_alpha = torch.log(
+                torch.ones(1, device=self.device) * self.alpha
+            ).requires_grad_(True)
             self.alpha_optimizer = Adam([self.log_alpha], lr=self.lr_entropy)
         else:
             self.alpha_t = torch.tensor(float(self.alpha)).to(self.device)
@@ -344,9 +386,8 @@ class REDQSACAgent(TrainingAgent):
         return self.model_nograd.actor
 
     def train(self, batch):
-
         self.i_update += 1
-        update_policy = (self.i_update % self.q_updates_per_policy_update == 0)
+        update_policy = self.i_update % self.q_updates_per_policy_update == 0
 
         o, a, r, o2, d, _ = batch
 
@@ -357,7 +398,9 @@ class REDQSACAgent(TrainingAgent):
         loss_alpha = None
         if self.learn_entropy_coef and update_policy:
             alpha_t = torch.exp(self.log_alpha.detach())
-            loss_alpha = -(self.log_alpha * (logp_pi + self.target_entropy).detach()).mean()
+            loss_alpha = -(
+                self.log_alpha * (logp_pi + self.target_entropy).detach()
+            ).mean()
         else:
             alpha_t = self.alpha_t
 
@@ -371,16 +414,22 @@ class REDQSACAgent(TrainingAgent):
 
             sample_idxs = np.random.choice(self.n, self.m, replace=False)
 
-            q_prediction_next_list = [self.model_target.qs[i](o2, a2) for i in sample_idxs]
+            q_prediction_next_list = [
+                self.model_target.qs[i](o2, a2) for i in sample_idxs
+            ]
             q_prediction_next_cat = torch.stack(q_prediction_next_list, -1)
             min_q, _ = torch.min(q_prediction_next_cat, dim=1, keepdim=True)
-            backup = r.unsqueeze(dim=-1) + self.gamma * (1 - d.unsqueeze(dim=-1)) * (min_q - alpha_t * logp_a2.unsqueeze(dim=-1))
+            backup = r.unsqueeze(dim=-1) + self.gamma * (1 - d.unsqueeze(dim=-1)) * (
+                min_q - alpha_t * logp_a2.unsqueeze(dim=-1)
+            )
 
         q_prediction_list = [q(o, a) for q in self.model.qs]
         q_prediction_cat = torch.stack(q_prediction_list, -1)
         backup = backup.expand((-1, self.n)) if backup.shape[1] == 1 else backup
 
-        loss_q = self.criterion(q_prediction_cat, backup)  # * self.n  # averaged for homogeneity with SAC
+        loss_q = self.criterion(
+            q_prediction_cat, backup
+        )  # * self.n  # averaged for homogeneity with SAC
 
         for q in self.q_optimizer_list:
             q.zero_grad()
@@ -407,7 +456,9 @@ class REDQSACAgent(TrainingAgent):
             self.pi_optimizer.step()
 
         with torch.no_grad():
-            for p, p_targ in zip(self.model.parameters(), self.model_target.parameters()):
+            for p, p_targ in zip(
+                self.model.parameters(), self.model_target.parameters()
+            ):
                 p_targ.data.mul_(self.polyak)
                 p_targ.data.add_((1 - self.polyak) * p.data)
 
