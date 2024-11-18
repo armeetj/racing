@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vision-tmrl"
+version = "0.0.0"
+description = "TMRL modified for Vision-based Asymmetric SAC"
+authors = [
+    { name = "Armeet Jatyani", email = "armeet@caltech.edu" },
+    { name = "Arnauld Martinez", email = "amartin7@caltech.edu" },
+]
+dynamic = ["dependencies", "keywords", "license", "readme", "classifiers"]
+
+
+[tool.black]
+line-length = 88
+target-version = ["py39"]
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "W"]
+ignore = ["E501"]
