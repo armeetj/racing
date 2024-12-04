@@ -11,13 +11,16 @@ class RewardFunction:
     """
     Computes a reward from the Openplanet API for Trackmania 2020.
     """
-    def __init__(self,
-                 reward_data_path,
-                 nb_obs_forward=10,
-                 nb_obs_backward=10,
-                 nb_zero_rew_before_failure=10,
-                 min_nb_steps_before_failure=int(3.5 * 20),
-                 max_dist_from_traj=60.0):
+
+    def __init__(
+        self,
+        reward_data_path,
+        nb_obs_forward=10,
+        nb_obs_backward=10,
+        nb_zero_rew_before_failure=10,
+        min_nb_steps_before_failure=int(3.5 * 20),
+        max_dist_from_traj=60.0,
+    ):
         """
         Instantiates a reward function for TM2020.
 
@@ -33,7 +36,7 @@ class RewardFunction:
             logging.debug(f" reward not found at path:{reward_data_path}")
             self.data = np.array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]])  # dummy reward
         else:
-            with open(reward_data_path, 'rb') as f:
+            with open(reward_data_path, "rb") as f:
                 self.data = pickle.load(f)
 
         self.cur_idx = 0
@@ -60,21 +63,29 @@ class RewardFunction:
 
         terminated = False
         self.step_counter += 1  # step counter to enable failure counter
-        min_dist = np.inf  # smallest distance found so far in the trajectory to the target pos
+        min_dist = (
+            np.inf
+        )  # smallest distance found so far in the trajectory to the target pos
         index = self.cur_idx  # cur_idx is where we were last step in the trajectory
         temp = self.nb_obs_forward  # counter used to find cuts
         best_index = 0  # index best matching the target pos
 
         while True:
-            dist = np.linalg.norm(pos - self.data[index])  # distance of the current index to target pos
-            if dist <= min_dist:  # if dist is smaller than our minimum found distance so far,
+            dist = np.linalg.norm(
+                pos - self.data[index]
+            )  # distance of the current index to target pos
+            if (
+                dist <= min_dist
+            ):  # if dist is smaller than our minimum found distance so far,
                 min_dist = dist  # then we found a new best distance,
                 best_index = index  # and a new best index
                 temp = self.nb_obs_forward  # we will have to check this number of positions to find a possible cut
             index += 1  # now we will evaluate the next index in the trajectory
             temp -= 1  # so we can decrease the counter for cuts
             # stop condition
-            if index >= self.datalen or temp <= 0:  # if trajectory complete or cuts counter depleted
+            if (
+                index >= self.datalen or temp <= 0
+            ):  # if trajectory complete or cuts counter depleted
                 # We check that we are not too far from the demo trajectory:
                 if min_dist > self.max_dist_from_traj:
                     best_index = self.cur_idx  # if so, consider we didn't move
@@ -84,7 +95,9 @@ class RewardFunction:
         # The reward is then proportional to the number of passed indexes (i.e., track distance):
         reward = (best_index - self.cur_idx) / 100.0
 
-        if best_index == self.cur_idx:  # if the best index didn't change, we rewind (more Markovian reward)
+        if (
+            best_index == self.cur_idx
+        ):  # if the best index didn't change, we rewind (more Markovian reward)
             min_dist = np.inf
             index = self.cur_idx
 
@@ -108,9 +121,17 @@ class RewardFunction:
                     terminated = True
 
         else:  # if we did progress on the track
-            self.failure_counter = 0  # we reset the counter triggering episode termination
+            self.failure_counter = (
+                0  # we reset the counter triggering episode termination
+            )
 
         self.cur_idx = best_index  # finally, we save our new best matching index
+
+        if os.getenv("COLLISION_STATUS") == "1":
+            reward = -1
+
+        if "DEBUG" in os.environ and os.environ["DEBUG"] == "1":
+            print("frame reward: " + str(reward))
 
         return reward, terminated
 

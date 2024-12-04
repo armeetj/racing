@@ -37,7 +37,7 @@ def print_with_timestamp(s):
 
 
 def print_ip():
-    public_ip = get('http://api.ipify.org').text
+    public_ip = get("http://api.ipify.org").text
     local_ip = socket.gethostbyname(socket.gethostname())
     print_with_timestamp(f"public IP: {public_ip}, local IP: {local_ip}")
 
@@ -53,6 +53,7 @@ class Buffer:
 
     Samples are tuples of the form (`act`, `new_obs`, `rew`, `terminated`, `truncated`, `info`)
     """
+
     def __init__(self, maxlen=cfg.BUFFERS_MAXLEN):
         """
         Args:
@@ -69,7 +70,7 @@ class Buffer:
         lenmem = len(self.memory)
         if lenmem > self.maxlen:
             print_with_timestamp("buffer overflow. Discarding old samples.")
-            self.memory = self.memory[(lenmem - self.maxlen):]
+            self.memory = self.memory[(lenmem - self.maxlen) :]
 
     def append_sample(self, sample):
         """
@@ -111,14 +112,17 @@ class Server:
     It buffers experiences sent by workers and periodically sends these to the trainer.
     It also receives the weights from the trainer and broadcasts these to the connected workers.
     """
-    def __init__(self,
-                 port=cfg.PORT,
-                 password=cfg.PASSWORD,
-                 local_port=cfg.LOCAL_PORT_SERVER,
-                 header_size=cfg.HEADER_SIZE,
-                 security=cfg.SECURITY,
-                 keys_dir=cfg.CREDENTIALS_DIRECTORY,
-                 max_workers=cfg.NB_WORKERS):
+
+    def __init__(
+        self,
+        port=cfg.PORT,
+        password=cfg.PASSWORD,
+        local_port=cfg.LOCAL_PORT_SERVER,
+        header_size=cfg.HEADER_SIZE,
+        security=cfg.SECURITY,
+        keys_dir=cfg.CREDENTIALS_DIRECTORY,
+        max_workers=cfg.NB_WORKERS,
+    ):
         """
         Args:
             port (int): tlspyo public port
@@ -129,19 +133,18 @@ class Server:
             keys_dir (str): tlspyo credentials directory
             max_workers (int): max number of accepted workers
         """
-        self.__relay = Relay(port=port,
-                             password=password,
-                             accepted_groups={
-                                 'trainers': {
-                                     'max_count': 1,
-                                     'max_consumables': None},
-                                 'workers': {
-                                     'max_count': max_workers,
-                                     'max_consumables': None}},
-                             local_com_port=local_port,
-                             header_size=header_size,
-                             security=security,
-                             keys_dir=keys_dir)
+        self.__relay = Relay(
+            port=port,
+            password=password,
+            accepted_groups={
+                "trainers": {"max_count": 1, "max_consumables": None},
+                "workers": {"max_count": max_workers, "max_consumables": None},
+            },
+            local_com_port=local_port,
+            header_size=header_size,
+            security=security,
+            keys_dir=keys_dir,
+        )
 
 
 # TRAINER: ==========================================
@@ -153,34 +156,38 @@ class TrainerInterface:
     This connects to the server
     This receives samples batches and sends new weights
     """
-    def __init__(self,
-                 server_ip=None,
-                 server_port=cfg.PORT,
-                 password=cfg.PASSWORD,
-                 local_com_port=cfg.LOCAL_PORT_TRAINER,
-                 header_size=cfg.HEADER_SIZE,
-                 max_buf_len=cfg.BUFFER_SIZE,
-                 security=cfg.SECURITY,
-                 keys_dir=cfg.CREDENTIALS_DIRECTORY,
-                 hostname=cfg.HOSTNAME,
-                 model_path=cfg.MODEL_PATH_TRAINER):
 
+    def __init__(
+        self,
+        server_ip=None,
+        server_port=cfg.PORT,
+        password=cfg.PASSWORD,
+        local_com_port=cfg.LOCAL_PORT_TRAINER,
+        header_size=cfg.HEADER_SIZE,
+        max_buf_len=cfg.BUFFER_SIZE,
+        security=cfg.SECURITY,
+        keys_dir=cfg.CREDENTIALS_DIRECTORY,
+        hostname=cfg.HOSTNAME,
+        model_path=cfg.MODEL_PATH_TRAINER,
+    ):
         self.model_path = model_path
-        self.server_ip = server_ip if server_ip is not None else '127.0.0.1'
-        self.__endpoint = Endpoint(ip_server=self.server_ip,
-                                   port=server_port,
-                                   password=password,
-                                   groups="trainers",
-                                   local_com_port=local_com_port,
-                                   header_size=header_size,
-                                   max_buf_len=max_buf_len,
-                                   security=security,
-                                   keys_dir=keys_dir,
-                                   hostname=hostname)
+        self.server_ip = server_ip if server_ip is not None else "127.0.0.1"
+        self.__endpoint = Endpoint(
+            ip_server=self.server_ip,
+            port=server_port,
+            password=password,
+            groups="trainers",
+            local_com_port=local_com_port,
+            header_size=header_size,
+            max_buf_len=max_buf_len,
+            security=security,
+            keys_dir=keys_dir,
+            hostname=hostname,
+        )
 
         print_with_timestamp(f"server IP: {self.server_ip}")
 
-        self.__endpoint.notify(groups={'trainers': -1})  # retrieve everything
+        self.__endpoint.notify(groups={"trainers": -1})  # retrieve everything
 
     def broadcast_model(self, model: ActorModule):
         """
@@ -188,7 +195,7 @@ class TrainerInterface:
         broadcasts the model's weights to all connected RolloutWorkers
         """
         model.save(self.model_path)
-        with open(self.model_path, 'rb') as f:
+        with open(self.model_path, "rb") as f:
             weights = f.read()
         self.__endpoint.broadcast(weights, "workers")
 
@@ -200,7 +207,7 @@ class TrainerInterface:
         res = Buffer()
         for buf in buffers:
             res += buf
-        self.__endpoint.notify(groups={'trainers': -1})  # retrieve everything
+        self.__endpoint.notify(groups={"trainers": -1})  # retrieve everything
         return res
 
 
@@ -209,7 +216,10 @@ def log_environment_variables():
     add certain relevant environment variables to our config
     usage: `LOG_VARIABLES='HOME JOBID' python ...`
     """
-    return {k: os.environ.get(k, '') for k in os.environ.get('LOG_VARIABLES', '').strip().split()}
+    return {
+        k: os.environ.get(k, "")
+        for k in os.environ.get("LOG_VARIABLES", "").strip().split()
+    }
 
 
 def load_run_instance(checkpoint_path):
@@ -233,13 +243,15 @@ def dump_run_instance(run_instance, checkpoint_path):
     dump(run_instance, checkpoint_path)
 
 
-def iterate_epochs(run_cls,
-                   interface: TrainerInterface,
-                   checkpoint_path: str,
-                   dump_run_instance_fn=dump_run_instance,
-                   load_run_instance_fn=load_run_instance,
-                   epochs_between_checkpoints=1,
-                   updater_fn=None):
+def iterate_epochs(
+    run_cls,
+    interface: TrainerInterface,
+    checkpoint_path: str,
+    dump_run_instance_fn=dump_run_instance,
+    load_run_instance_fn=load_run_instance,
+    epochs_between_checkpoints=1,
+    updater_fn=None,
+):
     """
     Main training loop (remote)
     The run_cls instance is saved in checkpoint_path at the end of each epoch
@@ -268,7 +280,9 @@ def iterate_epochs(run_cls,
 
         while run_instance.epoch < run_instance.epochs:
             # time.sleep(1)  # on network file systems writing files is asynchronous and we need to wait for sync
-            yield run_instance.run_epoch(interface=interface)  # yield stats data frame (this makes this function a generator)
+            yield run_instance.run_epoch(
+                interface=interface
+            )  # yield stats data frame (this makes this function a generator)
             if run_instance.epoch % epochs_between_checkpoints == 0:
                 logging.info(f" saving checkpoint...")
                 t1 = time.time()
@@ -284,7 +298,17 @@ def iterate_epochs(run_cls,
             os.remove(checkpoint_path)
 
 
-def run_with_wandb(entity, project, run_id, interface, run_cls, checkpoint_path: str = None, dump_run_instance_fn=None, load_run_instance_fn=None, updater_fn=None):
+def run_with_wandb(
+    entity,
+    project,
+    run_id,
+    interface,
+    run_cls,
+    checkpoint_path: str = None,
+    dump_run_instance_fn=None,
+    load_run_instance_fn=None,
+    updater_fn=None,
+):
     """
     Main training loop (remote).
 
@@ -293,18 +317,28 @@ def run_with_wandb(entity, project, run_id, interface, run_cls, checkpoint_path:
     dump_run_instance_fn = dump_run_instance_fn or dump_run_instance
     load_run_instance_fn = load_run_instance_fn or load_run_instance
     wandb_dir = tempfile.mkdtemp()  # prevent wandb from polluting the home directory
-    atexit.register(shutil.rmtree, wandb_dir, ignore_errors=True)  # clean up after wandb atexit handler finishes
+    atexit.register(
+        shutil.rmtree, wandb_dir, ignore_errors=True
+    )  # clean up after wandb atexit handler finishes
     import wandb
+
     logging.debug(f" run_cls: {run_cls}")
     config = partial_to_dict(run_cls)
-    config['environ'] = log_environment_variables()
+    config["environ"] = log_environment_variables()
     # config['git'] = git_info()  # TODO: check this for bugs
     resume = checkpoint_path and exists(checkpoint_path)
     wandb_initialized = False
     err_cpt = 0
     while not wandb_initialized:
         try:
-            wandb.init(dir=wandb_dir, entity=entity, project=project, id=run_id, resume=resume, config=config)
+            wandb.init(
+                dir=wandb_dir,
+                entity=entity,
+                project=project,
+                id=run_id,
+                resume=resume,
+                config=config,
+            )
             wandb_initialized = True
         except Exception as e:
             err_cpt += 1
@@ -315,17 +349,40 @@ def run_with_wandb(entity, project, run_id, interface, run_cls, checkpoint_path:
             else:
                 time.sleep(10.0)
     # logging.info(config)
-    for stats in iterate_epochs(run_cls, interface, checkpoint_path, dump_run_instance_fn, load_run_instance_fn, 1, updater_fn):
+    for stats in iterate_epochs(
+        run_cls,
+        interface,
+        checkpoint_path,
+        dump_run_instance_fn,
+        load_run_instance_fn,
+        1,
+        updater_fn,
+    ):
         [wandb.log(json.loads(s.to_json())) for s in stats]
 
 
-def run(interface, run_cls, checkpoint_path: str = None, dump_run_instance_fn=None, load_run_instance_fn=None, updater_fn=None):
+def run(
+    interface,
+    run_cls,
+    checkpoint_path: str = None,
+    dump_run_instance_fn=None,
+    load_run_instance_fn=None,
+    updater_fn=None,
+):
     """
     Main training loop (remote).
     """
     dump_run_instance_fn = dump_run_instance_fn or dump_run_instance
     load_run_instance_fn = load_run_instance_fn or load_run_instance
-    for stats in iterate_epochs(run_cls, interface, checkpoint_path, dump_run_instance_fn, load_run_instance_fn, 1, updater_fn):
+    for stats in iterate_epochs(
+        run_cls,
+        interface,
+        checkpoint_path,
+        dump_run_instance_fn,
+        load_run_instance_fn,
+        1,
+        updater_fn,
+    ):
         pass
 
 
@@ -336,22 +393,25 @@ class Trainer:
     The `Trainer` object is where RL training happens.
     Typically, it can be located on a HPC cluster.
     """
-    def __init__(self,
-                 training_cls=cfg_obj.TRAINER,
-                 server_ip=cfg.SERVER_IP_FOR_TRAINER,
-                 server_port=cfg.PORT,
-                 password=cfg.PASSWORD,
-                 local_com_port=cfg.LOCAL_PORT_TRAINER,
-                 header_size=cfg.HEADER_SIZE,
-                 max_buf_len=cfg.BUFFER_SIZE,
-                 security=cfg.SECURITY,
-                 keys_dir=cfg.CREDENTIALS_DIRECTORY,
-                 hostname=cfg.HOSTNAME,
-                 model_path=cfg.MODEL_PATH_TRAINER,
-                 checkpoint_path=cfg.CHECKPOINT_PATH,
-                 dump_run_instance_fn: callable = None,
-                 load_run_instance_fn: callable = None,
-                 updater_fn: callable = None):
+
+    def __init__(
+        self,
+        training_cls=cfg_obj.TRAINER,
+        server_ip=cfg.SERVER_IP_FOR_TRAINER,
+        server_port=cfg.PORT,
+        password=cfg.PASSWORD,
+        local_com_port=cfg.LOCAL_PORT_TRAINER,
+        header_size=cfg.HEADER_SIZE,
+        max_buf_len=cfg.BUFFER_SIZE,
+        security=cfg.SECURITY,
+        keys_dir=cfg.CREDENTIALS_DIRECTORY,
+        hostname=cfg.HOSTNAME,
+        model_path=cfg.MODEL_PATH_TRAINER,
+        checkpoint_path=cfg.CHECKPOINT_PATH,
+        dump_run_instance_fn: callable = None,
+        load_run_instance_fn: callable = None,
+        updater_fn: callable = None,
+    ):
         """
         Args:
             training_cls (type): training class (subclass of tmrl.training_offline.TrainingOffline)
@@ -377,33 +437,39 @@ class Trainer:
         self.load_run_instance_fn = load_run_instance_fn
         self.updater_fn = updater_fn
         self.training_cls = training_cls
-        self.interface = TrainerInterface(server_ip=server_ip,
-                                          server_port=server_port,
-                                          password=password,
-                                          local_com_port=local_com_port,
-                                          header_size=header_size,
-                                          max_buf_len=max_buf_len,
-                                          security=security,
-                                          keys_dir=keys_dir,
-                                          hostname=hostname,
-                                          model_path=model_path)
+        self.interface = TrainerInterface(
+            server_ip=server_ip,
+            server_port=server_port,
+            password=password,
+            local_com_port=local_com_port,
+            header_size=header_size,
+            max_buf_len=max_buf_len,
+            security=security,
+            keys_dir=keys_dir,
+            hostname=hostname,
+            model_path=model_path,
+        )
 
     def run(self):
         """
         Runs training.
         """
-        run(interface=self.interface,
+        run(
+            interface=self.interface,
             run_cls=self.training_cls,
             checkpoint_path=self.checkpoint_path,
             dump_run_instance_fn=self.dump_run_instance_fn,
             load_run_instance_fn=self.load_run_instance_fn,
-            updater_fn=self.updater_fn)
+            updater_fn=self.updater_fn,
+        )
 
-    def run_with_wandb(self,
-                       entity=cfg.WANDB_ENTITY,
-                       project=cfg.WANDB_PROJECT,
-                       run_id=cfg.WANDB_RUN_ID,
-                       key=None):
+    def run_with_wandb(
+        self,
+        entity=cfg.WANDB_ENTITY,
+        project=cfg.WANDB_PROJECT,
+        run_id=cfg.WANDB_RUN_ID,
+        key=None,
+    ):
         """
         Runs training while logging metrics to wandb_.
 
@@ -416,16 +482,18 @@ class Trainer:
             key (str): wandb API key
         """
         if key is not None:
-            os.environ['WANDB_API_KEY'] = key
-        run_with_wandb(entity=entity,
-                       project=project,
-                       run_id=run_id,
-                       interface=self.interface,
-                       run_cls=self.training_cls,
-                       checkpoint_path=self.checkpoint_path,
-                       dump_run_instance_fn=self.dump_run_instance_fn,
-                       load_run_instance_fn=self.load_run_instance_fn,
-                       updater_fn=self.updater_fn)
+            os.environ["WANDB_API_KEY"] = key
+        run_with_wandb(
+            entity=entity,
+            project=project,
+            run_id=run_id,
+            interface=self.interface,
+            run_cls=self.training_cls,
+            checkpoint_path=self.checkpoint_path,
+            dump_run_instance_fn=self.dump_run_instance_fn,
+            load_run_instance_fn=self.load_run_instance_fn,
+            updater_fn=self.updater_fn,
+        )
 
 
 # ROLLOUT WORKER: ===================================
@@ -438,28 +506,29 @@ class RolloutWorker:
     A `RolloutWorker` may connect to a `Server` to which it sends buffered experience.
     Alternatively, it may exist in standalone mode for deployment.
     """
+
     def __init__(
-            self,
-            env_cls,
-            actor_module_cls,
-            sample_compressor: callable = None,
-            device="cpu",
-            max_samples_per_episode=np.inf,
-            model_path=cfg.MODEL_PATH_WORKER,
-            obs_preprocessor: callable = None,
-            crc_debug=False,
-            model_path_history=cfg.MODEL_PATH_SAVE_HISTORY,
-            model_history=cfg.MODEL_HISTORY,
-            standalone=False,
-            server_ip=None,
-            server_port=cfg.PORT,
-            password=cfg.PASSWORD,
-            local_port=cfg.LOCAL_PORT_WORKER,
-            header_size=cfg.HEADER_SIZE,
-            max_buf_len=cfg.BUFFER_SIZE,
-            security=cfg.SECURITY,
-            keys_dir=cfg.CREDENTIALS_DIRECTORY,
-            hostname=cfg.HOSTNAME
+        self,
+        env_cls,
+        actor_module_cls,
+        sample_compressor: callable = None,
+        device="cpu",
+        max_samples_per_episode=np.inf,
+        model_path=cfg.MODEL_PATH_WORKER,
+        obs_preprocessor: callable = None,
+        crc_debug=False,
+        model_path_history=cfg.MODEL_PATH_SAVE_HISTORY,
+        model_history=cfg.MODEL_HISTORY,
+        standalone=False,
+        server_ip=None,
+        server_port=cfg.PORT,
+        password=cfg.PASSWORD,
+        local_port=cfg.LOCAL_PORT_WORKER,
+        header_size=cfg.HEADER_SIZE,
+        max_buf_len=cfg.BUFFER_SIZE,
+        security=cfg.SECURITY,
+        keys_dir=cfg.CREDENTIALS_DIRECTORY,
+        hostname=cfg.HOSTNAME,
     ):
         """
         Args:
@@ -498,7 +567,9 @@ class RolloutWorker:
         self.model_path = model_path
         self.model_path_history = model_path_history
         self.device = device
-        self.actor = actor_module_cls(observation_space=obs_space, action_space=act_space).to_device(self.device)
+        self.actor = actor_module_cls(
+            observation_space=obs_space, action_space=act_space
+        ).to_device(self.device)
         self.standalone = standalone
         if os.path.isfile(self.model_path):
             logging.debug(f"Loading model from {self.model_path}")
@@ -515,22 +586,24 @@ class RolloutWorker:
         self.debug_ts_cpt = 0
         self.debug_ts_res_cpt = 0
 
-        self.server_ip = server_ip if server_ip is not None else '127.0.0.1'
+        self.server_ip = server_ip if server_ip is not None else "127.0.0.1"
 
         print_with_timestamp(f"server IP: {self.server_ip}")
 
         if not self.standalone:
-            self.__endpoint = Endpoint(ip_server=self.server_ip,
-                                       port=server_port,
-                                       password=password,
-                                       groups="workers",
-                                       local_com_port=local_port,
-                                       header_size=header_size,
-                                       max_buf_len=max_buf_len,
-                                       security=security,
-                                       keys_dir=keys_dir,
-                                       hostname=hostname,
-                                       deserializer_mode="synchronous")
+            self.__endpoint = Endpoint(
+                ip_server=self.server_ip,
+                port=server_port,
+                password=password,
+                groups="workers",
+                local_com_port=local_port,
+                header_size=header_size,
+                max_buf_len=max_buf_len,
+                security=security,
+                keys_dir=keys_dir,
+                hostname=hostname,
+                deserializer_mode="synchronous",
+            )
         else:
             self.__endpoint = None
 
@@ -578,10 +651,12 @@ class RolloutWorker:
             if self.crc_debug:
                 self.debug_ts_cpt += 1
                 self.debug_ts_res_cpt = 0
-                info['crc_sample'] = (obs, act, new_obs, rew, terminated, truncated)
-                info['crc_sample_ts'] = (self.debug_ts_cpt, self.debug_ts_res_cpt)
+                info["crc_sample"] = (obs, act, new_obs, rew, terminated, truncated)
+                info["crc_sample_ts"] = (self.debug_ts_cpt, self.debug_ts_res_cpt)
             if self.get_local_buffer_sample:
-                sample = self.get_local_buffer_sample(act, new_obs, rew, terminated, truncated, info)
+                sample = self.get_local_buffer_sample(
+                    act, new_obs, rew, terminated, truncated, info
+                )
             else:
                 sample = act, new_obs, rew, terminated, truncated, info
             self.buffer.append_sample(sample)
@@ -619,13 +694,17 @@ class RolloutWorker:
             if self.crc_debug:
                 self.debug_ts_cpt += 1
                 self.debug_ts_res_cpt += 1
-                info['crc_sample'] = (obs, act, new_obs, rew, terminated, truncated)
-                info['crc_sample_ts'] = (self.debug_ts_cpt, self.debug_ts_res_cpt)
+                info["crc_sample"] = (obs, act, new_obs, rew, terminated, truncated)
+                info["crc_sample_ts"] = (self.debug_ts_cpt, self.debug_ts_res_cpt)
             if self.get_local_buffer_sample:
-                sample = self.get_local_buffer_sample(act, new_obs, rew, terminated, truncated, info)
+                sample = self.get_local_buffer_sample(
+                    act, new_obs, rew, terminated, truncated, info
+                )
             else:
                 sample = act, new_obs, rew, terminated, truncated, info
-            self.buffer.append_sample(sample)  # CAUTION: in the buffer, act is for the PREVIOUS transition (act, obs(act))
+            self.buffer.append_sample(
+                sample
+            )  # CAUTION: in the buffer, act is for the PREVIOUS transition (act, obs(act))
         return new_obs, rew, terminated, truncated, info
 
     def collect_train_episode(self, max_samples=None):
@@ -648,7 +727,12 @@ class RolloutWorker:
         steps = 0
         obs, info = self.reset(collect_samples=True)
         for i in iterator:
-            obs, rew, terminated, truncated, info = self.step(obs=obs, test=False, collect_samples=True, last_step=i == max_samples - 1)
+            obs, rew, terminated, truncated, info = self.step(
+                obs=obs,
+                test=False,
+                collect_samples=True,
+                last_step=i == max_samples - 1,
+            )
             ret += rew
             steps += 1
             if terminated or truncated:
@@ -656,7 +740,9 @@ class RolloutWorker:
         self.buffer.stat_train_return = ret
         self.buffer.stat_train_steps = steps
 
-    def run_episodes(self, max_samples_per_episode=None, nb_episodes=np.inf, train=False):
+    def run_episodes(
+        self, max_samples_per_episode=None, nb_episodes=np.inf, train=False
+    ):
         """
         Runs `nb_episodes` episodes.
 
@@ -692,7 +778,9 @@ class RolloutWorker:
         steps = 0
         obs, info = self.reset(collect_samples=False)
         for _ in iterator:
-            obs, rew, terminated, truncated, info = self.step(obs=obs, test=not train, collect_samples=False)
+            obs, rew, terminated, truncated, info = self.step(
+                obs=obs, test=not train, collect_samples=False
+            )
             ret += rew
             steps += 1
             if terminated or truncated:
@@ -700,7 +788,9 @@ class RolloutWorker:
         self.buffer.stat_test_return = ret
         self.buffer.stat_test_steps = steps
 
-    def run(self, test_episode_interval=0, nb_episodes=np.inf, verbose=True, expert=False):
+    def run(
+        self, test_episode_interval=0, nb_episodes=np.inf, verbose=True, expert=False
+    ):
         """
         Runs the worker for `nb_episodes` episodes.
 
@@ -746,7 +836,11 @@ class RolloutWorker:
                     self.update_actor_weights(verbose=False)
         else:
             for episode in iterator:
-                if test_episode_interval and episode % test_episode_interval == 0 and not self.crc_debug:
+                if (
+                    test_episode_interval
+                    and episode % test_episode_interval == 0
+                    and not self.crc_debug
+                ):
                     print_with_timestamp("running test episode")
                     self.run_episode(self.max_samples_per_episode, train=False)
                 print_with_timestamp("collecting train episode")
@@ -756,13 +850,15 @@ class RolloutWorker:
                 print_with_timestamp("checking for new weights")
                 self.update_actor_weights(verbose=True)
 
-    def run_synchronous(self,
-                        test_episode_interval=0,
-                        nb_steps=np.inf,
-                        initial_steps=1,
-                        max_steps_per_update=np.inf,
-                        end_episodes=True,
-                        verbose=False):
+    def run_synchronous(
+        self,
+        test_episode_interval=0,
+        nb_steps=np.inf,
+        initial_steps=1,
+        max_steps_per_update=np.inf,
+        end_episodes=True,
+        verbose=False,
+    ):
         """
         Collects `nb_steps` steps while synchronizing with the Trainer.
 
@@ -800,10 +896,12 @@ class RolloutWorker:
             # episode
             while not done and (end_episodes or iteration < initial_steps):
                 # step
-                obs, rew, terminated, truncated, info = self.step(obs=obs,
-                                                                  test=False,
-                                                                  collect_samples=True,
-                                                                  last_step=steps == self.max_samples_per_episode - 1)
+                obs, rew, terminated, truncated, info = self.step(
+                    obs=obs,
+                    test=False,
+                    collect_samples=True,
+                    last_step=steps == self.max_samples_per_episode - 1,
+                )
                 iteration += 1
                 steps += 1
                 ret += rew
@@ -821,7 +919,9 @@ class RolloutWorker:
         ratio = (iteration + 1) / i_model
         while ratio > max_steps_per_update:
             if verbose:
-                logging.info(f"Ratio {ratio} > {max_steps_per_update}, sending buffer checking updates")
+                logging.info(
+                    f"Ratio {ratio} > {max_steps_per_update}, sending buffer checking updates"
+                )
             self.send_and_clear_buffer()
             i_model += self.update_actor_weights(verbose=verbose, blocking=True)
             ratio = (iteration + 1) / i_model
@@ -834,10 +934,13 @@ class RolloutWorker:
         ret = 0.0
 
         while iteration < nb_steps:
-
             if done:
                 # test episode
-                if test_episode_interval > 0 and episode % test_episode_interval == 0 and end_episodes:
+                if (
+                    test_episode_interval > 0
+                    and episode % test_episode_interval == 0
+                    and end_episodes
+                ):
                     if verbose:
                         print_with_timestamp("running test episode")
                     self.run_episode(self.max_samples_per_episode, train=False)
@@ -850,12 +953,13 @@ class RolloutWorker:
                 episode += 1
 
             while not done and (end_episodes or ratio <= max_steps_per_update):
-
                 # step
-                obs, rew, terminated, truncated, info = self.step(obs=obs,
-                                                                  test=False,
-                                                                  collect_samples=True,
-                                                                  last_step=steps == self.max_samples_per_episode - 1)
+                obs, rew, terminated, truncated, info = self.step(
+                    obs=obs,
+                    test=False,
+                    collect_samples=True,
+                    last_step=steps == self.max_samples_per_episode - 1,
+                )
                 iteration += 1
                 steps += 1
                 ret += rew
@@ -867,12 +971,16 @@ class RolloutWorker:
                     ratio = (iteration + 1) / i_model
                     while ratio > max_steps_per_update:
                         if verbose:
-                            logging.info(f"Ratio {ratio} > {max_steps_per_update}, sending buffer checking updates (no eoe)")
+                            logging.info(
+                                f"Ratio {ratio} > {max_steps_per_update}, sending buffer checking updates (no eoe)"
+                            )
                         if not done:
                             if verbose:
                                 logging.info(f"Sending buffer (no eoe)")
                             self.send_and_clear_buffer()
-                        i_model += self.update_actor_weights(verbose=verbose, blocking=True)
+                        i_model += self.update_actor_weights(
+                            verbose=verbose, blocking=True
+                        )
                         ratio = (iteration + 1) / i_model
 
             if end_episodes:
@@ -881,7 +989,8 @@ class RolloutWorker:
                 while ratio > max_steps_per_update:
                     if verbose:
                         logging.info(
-                            f"Ratio {ratio} > {max_steps_per_update}, sending buffer checking updates (eoe)")
+                            f"Ratio {ratio} > {max_steps_per_update}, sending buffer checking updates (eoe)"
+                        )
                     if not done:
                         if verbose:
                             logging.info(f"Sending buffer (eoe)")
@@ -892,7 +1001,9 @@ class RolloutWorker:
             self.buffer.stat_train_return = ret
             self.buffer.stat_train_steps = steps
             if verbose:
-                logging.info(f"Sending buffer - DEBUG ratio {ratio} iteration {iteration} i_model {i_model}")
+                logging.info(
+                    f"Sending buffer - DEBUG ratio {ratio} iteration {iteration} i_model {i_model}"
+                )
             self.send_and_clear_buffer()
 
     def run_env_benchmark(self, nb_steps, test=False, verbose=True):
@@ -914,7 +1025,9 @@ class RolloutWorker:
 
         obs, info = self.reset(collect_samples=False)
         for _ in range(nb_steps):
-            obs, rew, terminated, truncated, info = self.step(obs=obs, test=test, collect_samples=False)
+            obs, rew, terminated, truncated, info = self.step(
+                obs=obs, test=test, collect_samples=False
+            )
             if terminated or truncated:
                 break
         res = self.env.benchmarks()
@@ -944,13 +1057,18 @@ class RolloutWorker:
         nb_received = len(weights_list)
         if nb_received > 0:
             weights = weights_list[-1]
-            with open(self.model_path, 'wb') as f:
+            with open(self.model_path, "wb") as f:
                 f.write(weights)
             if self.model_history:
                 self._cur_hist_cpt += 1
                 if self._cur_hist_cpt == self.model_history:
                     x = datetime.datetime.now()
-                    with open(self.model_path_history + str(x.strftime("%d_%m_%Y_%H_%M_%S")) + ".tmod", 'wb') as f:
+                    with open(
+                        self.model_path_history
+                        + str(x.strftime("%d_%m_%Y_%H_%M_%S"))
+                        + ".tmod",
+                        "wb",
+                    ) as f:
                         f.write(weights)
                     self._cur_hist_cpt = 0
                     if verbose:

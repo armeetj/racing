@@ -116,13 +116,23 @@ class SpinupSacAgent(TrainingAgent):  # Adapted from Spinup
         else:
             self.alpha_t = torch.tensor(float(self.alpha)).to(self.device)
 
+        # self.old_speed = np.zeros([256, 1])
+        # self.speed_threshold = 5.0
+
     def get_actor(self):
         return self.model_nograd.actor
+
+    # def collision_penalty(self, obs):
+    #     curr_speed = obs[0]
+    #     speed_diff = curr_speed - self.old_speed
+    #     if np.mean(speed_diff) > threa
 
     def train(self, batch):
         o, a, r, o2, d, _ = batch
 
-        if "VISION" in os.environ and os.environ["VISION"] == "1":
+        if os.getenv("VISION") == "1":
+            if os.getenv("DEBUG") == "1":
+                print("using vision")
             o = (
                 torch.zeros_like(o[0]),
                 torch.zeros_like(o[1]),
@@ -390,6 +400,8 @@ class REDQSACAgent(TrainingAgent):
         update_policy = self.i_update % self.q_updates_per_policy_update == 0
 
         o, a, r, o2, d, _ = batch
+
+        print("In REDQSAC")
 
         if update_policy:
             pi, logp_pi = self.model.actor(o)
