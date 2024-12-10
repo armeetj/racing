@@ -16,7 +16,11 @@ from rtgym import RealTimeGymInterface
 # local imports
 import tmrl.config.config_constants as cfg
 from tmrl.custom.utils.compute_reward import RewardFunction
-from tmrl.custom.utils.control_gamepad import control_gamepad, gamepad_reset, gamepad_close_finish_pop_up_tm20
+from tmrl.custom.utils.control_gamepad import (
+    control_gamepad,
+    gamepad_reset,
+    gamepad_close_finish_pop_up_tm20,
+)
 from tmrl.custom.utils.control_mouse import mouse_close_finish_pop_up_tm20
 from tmrl.custom.utils.control_keyboard import apply_control, keyres
 from tmrl.custom.utils.window import WindowInterface
@@ -29,16 +33,20 @@ CHECK_FORWARD = 500  # this allows (and rewards) 50m cuts
 
 # Interface for Trackmania 2020 ========================================================================================
 
+
 class TM2020Interface(RealTimeGymInterface):
     """
     This is the API needed for the algorithm to control TrackMania 2020
     """
-    def __init__(self,
-                 img_hist_len: int = 4,
-                 gamepad: bool = True,
-                 save_replays: bool = False,
-                 grayscale: bool = True,
-                 resize_to=(64, 64)):
+
+    def __init__(
+        self,
+        img_hist_len: int = 4,
+        gamepad: bool = True,
+        save_replays: bool = False,
+        grayscale: bool = True,
+        resize_to=(64, 64),
+    ):
         """
         Base rtgym interface for TrackMania 2020 (Full environment)
 
@@ -62,14 +70,15 @@ class TM2020Interface(RealTimeGymInterface):
         self.save_replays = save_replays
         self.grayscale = grayscale
         self.resize_to = resize_to
-        self.finish_reward = cfg.REWARD_CONFIG['END_OF_TRACK']
-        self.constant_penalty = cfg.REWARD_CONFIG['CONSTANT_PENALTY']
+        self.finish_reward = cfg.REWARD_CONFIG["END_OF_TRACK"]
+        self.constant_penalty = cfg.REWARD_CONFIG["CONSTANT_PENALTY"]
 
         self.initialized = False
 
     def initialize_common(self):
         if self.gamepad:
             import vgamepad as vg
+
             self.j = vg.VX360Gamepad()
             logging.debug(" virtual joystick in use")
         self.window_interface = WindowInterface("Trackmania")
@@ -77,12 +86,14 @@ class TM2020Interface(RealTimeGymInterface):
         self.last_time = time.time()
         self.img_hist = deque(maxlen=self.img_hist_len)
         self.img = None
-        self.reward_function = RewardFunction(reward_data_path=cfg.REWARD_PATH,
-                                              nb_obs_forward=cfg.REWARD_CONFIG['CHECK_FORWARD'],
-                                              nb_obs_backward=cfg.REWARD_CONFIG['CHECK_BACKWARD'],
-                                              nb_zero_rew_before_failure=cfg.REWARD_CONFIG['FAILURE_COUNTDOWN'],
-                                              min_nb_steps_before_failure=cfg.REWARD_CONFIG['MIN_STEPS'],
-                                              max_dist_from_traj=cfg.REWARD_CONFIG['MAX_STRAY'])
+        self.reward_function = RewardFunction(
+            reward_data_path=cfg.REWARD_PATH,
+            nb_obs_forward=cfg.REWARD_CONFIG["CHECK_FORWARD"],
+            nb_obs_backward=cfg.REWARD_CONFIG["CHECK_BACKWARD"],
+            nb_zero_rew_before_failure=cfg.REWARD_CONFIG["FAILURE_COUNTDOWN"],
+            min_nb_steps_before_failure=cfg.REWARD_CONFIG["MIN_STEPS"],
+            max_dist_from_traj=cfg.REWARD_CONFIG["MAX_STRAY"],
+        )
         self.client = TM2020OpenPlanetClient()
 
     def initialize(self):
@@ -105,13 +116,13 @@ class TM2020Interface(RealTimeGymInterface):
             if control is not None:
                 actions = []
                 if control[0] > 0:
-                    actions.append('f')
+                    actions.append("f")
                 if control[1] > 0:
-                    actions.append('b')
+                    actions.append("b")
                 if control[2] > 0.5:
-                    actions.append('r')
+                    actions.append("r")
                 elif control[2] < -0.5:
-                    actions.append('l')
+                    actions.append("l")
                 apply_control(actions)
 
     def grab_data_and_img(self):
@@ -137,7 +148,11 @@ class TM2020Interface(RealTimeGymInterface):
             self.initialize()
         self.send_control(self.get_default_action())
         self.reset_race()
-        time_sleep = max(0, cfg.SLEEP_TIME_AT_RESET - 0.1) if self.gamepad else cfg.SLEEP_TIME_AT_RESET
+        time_sleep = (
+            max(0, cfg.SLEEP_TIME_AT_RESET - 0.1)
+            if self.gamepad
+            else cfg.SLEEP_TIME_AT_RESET
+        )
         time.sleep(time_sleep)  # must be long enough for image to be refreshed
 
     def reset(self, seed=None, options=None):
@@ -146,15 +161,24 @@ class TM2020Interface(RealTimeGymInterface):
         """
         self.reset_common()
         data, img = self.grab_data_and_img()
-        speed = np.array([
-            data[0],
-        ], dtype='float32')
-        gear = np.array([
-            data[9],
-        ], dtype='float32')
-        rpm = np.array([
-            data[10],
-        ], dtype='float32')
+        speed = np.array(
+            [
+                data[0],
+            ],
+            dtype="float32",
+        )
+        gear = np.array(
+            [
+                data[9],
+            ],
+            dtype="float32",
+        )
+        rpm = np.array(
+            [
+                data[10],
+            ],
+            dtype="float32",
+        )
         for _ in range(self.img_hist_len):
             self.img_hist.append(img)
         imgs = np.array(list(self.img_hist))
@@ -187,16 +211,27 @@ class TM2020Interface(RealTimeGymInterface):
         obs must be a list of numpy arrays
         """
         data, img = self.grab_data_and_img()
-        speed = np.array([
-            data[0],
-        ], dtype='float32')
-        gear = np.array([
-            data[9],
-        ], dtype='float32')
-        rpm = np.array([
-            data[10],
-        ], dtype='float32')
-        rew, terminated = self.reward_function.compute_reward(pos=np.array([data[2], data[3], data[4]]))
+        speed = np.array(
+            [
+                data[0],
+            ],
+            dtype="float32",
+        )
+        gear = np.array(
+            [
+                data[9],
+            ],
+            dtype="float32",
+        )
+        rpm = np.array(
+            [
+                data[10],
+            ],
+            dtype="float32",
+        )
+        rew, terminated = self.reward_function.compute_reward(
+            pos=np.array([data[2], data[3], data[4]])
+        )
         self.img_hist.append(img)
         imgs = np.array(list(self.img_hist))
         obs = [speed, gear, rpm, imgs]
@@ -207,36 +242,42 @@ class TM2020Interface(RealTimeGymInterface):
             rew += self.finish_reward
         rew += self.constant_penalty
         rew = np.float32(rew)
+
+        print("reward:", rew)
         return obs, rew, terminated, info
 
     def get_observation_space(self):
         """
         must be a Tuple
         """
-        speed = spaces.Box(low=0.0, high=1000.0, shape=(1, ))
-        gear = spaces.Box(low=0.0, high=6, shape=(1, ))
-        rpm = spaces.Box(low=0.0, high=np.inf, shape=(1, ))
+        speed = spaces.Box(low=0.0, high=1000.0, shape=(1,))
+        gear = spaces.Box(low=0.0, high=6, shape=(1,))
+        rpm = spaces.Box(low=0.0, high=np.inf, shape=(1,))
         if self.resize_to is not None:
             w, h = self.resize_to
         else:
             w, h = cfg.WINDOW_HEIGHT, cfg.WINDOW_WIDTH
         if self.grayscale:
-            img = spaces.Box(low=0.0, high=255.0, shape=(self.img_hist_len, h, w))  # cv2 grayscale images are (h, w)
+            img = spaces.Box(
+                low=0.0, high=255.0, shape=(self.img_hist_len, h, w)
+            )  # cv2 grayscale images are (h, w)
         else:
-            img = spaces.Box(low=0.0, high=255.0, shape=(self.img_hist_len, h, w, 3))  # cv2 images are (h, w, c)
+            img = spaces.Box(
+                low=0.0, high=255.0, shape=(self.img_hist_len, h, w, 3)
+            )  # cv2 images are (h, w, c)
         return spaces.Tuple((speed, gear, rpm, img))
 
     def get_action_space(self):
         """
         must return a Box
         """
-        return spaces.Box(low=-1.0, high=1.0, shape=(3, ))
+        return spaces.Box(low=-1.0, high=1.0, shape=(3,))
 
     def get_default_action(self):
         """
         initial action at episode start
         """
-        return np.array([0.0, 0.0, 0.0], dtype='float32')
+        return np.array([0.0, 0.0, 0.0], dtype="float32")
 
 
 class TM2020InterfaceLidar(TM2020Interface):
@@ -248,9 +289,12 @@ class TM2020InterfaceLidar(TM2020Interface):
     def grab_lidar_speed_and_data(self):
         img = self.window_interface.screenshot()[:, :, :3]
         data = self.client.retrieve_data()
-        speed = np.array([
-            data[0],
-        ], dtype='float32')
+        speed = np.array(
+            [
+                data[0],
+            ],
+            dtype="float32",
+        )
         lidar = self.lidar.lidar_20(img=img, show=False)
         return lidar, speed, data
 
@@ -268,7 +312,7 @@ class TM2020InterfaceLidar(TM2020Interface):
         img, speed, data = self.grab_lidar_speed_and_data()
         for _ in range(self.img_hist_len):
             self.img_hist.append(img)
-        imgs = np.array(list(self.img_hist), dtype='float32')
+        imgs = np.array(list(self.img_hist), dtype="float32")
         obs = [speed, imgs]
         self.reward_function.reset()
         return obs, {}
@@ -279,9 +323,11 @@ class TM2020InterfaceLidar(TM2020Interface):
         obs must be a list of numpy arrays
         """
         img, speed, data = self.grab_lidar_speed_and_data()
-        rew, terminated = self.reward_function.compute_reward(pos=np.array([data[2], data[3], data[4]]))
+        rew, terminated = self.reward_function.compute_reward(
+            pos=np.array([data[2], data[3], data[4]])
+        )
         self.img_hist.append(img)
-        imgs = np.array(list(self.img_hist), dtype='float32')
+        imgs = np.array(list(self.img_hist), dtype="float32")
         obs = [speed, imgs]
         end_of_track = bool(data[8])
         info = {}
@@ -296,16 +342,19 @@ class TM2020InterfaceLidar(TM2020Interface):
         """
         must be a Tuple
         """
-        speed = spaces.Box(low=0.0, high=1000.0, shape=(1, ))
-        imgs = spaces.Box(low=0.0, high=np.inf, shape=(
-            self.img_hist_len,
-            19,
-        ))  # lidars
+        speed = spaces.Box(low=0.0, high=1000.0, shape=(1,))
+        imgs = spaces.Box(
+            low=0.0,
+            high=np.inf,
+            shape=(
+                self.img_hist_len,
+                19,
+            ),
+        )  # lidars
         return spaces.Tuple((speed, imgs))
 
 
 class TM2020InterfaceLidarProgress(TM2020InterfaceLidar):
-
     def reset(self, seed=None, options=None):
         """
         obs must be a list of numpy arrays
@@ -314,8 +363,8 @@ class TM2020InterfaceLidarProgress(TM2020InterfaceLidar):
         img, speed, data = self.grab_lidar_speed_and_data()
         for _ in range(self.img_hist_len):
             self.img_hist.append(img)
-        imgs = np.array(list(self.img_hist), dtype='float32')
-        progress = np.array([0], dtype='float32')
+        imgs = np.array(list(self.img_hist), dtype="float32")
+        progress = np.array([0], dtype="float32")
         obs = [speed, progress, imgs]
         self.reward_function.reset()
         return obs, {}
@@ -326,10 +375,15 @@ class TM2020InterfaceLidarProgress(TM2020InterfaceLidar):
         obs must be a list of numpy arrays
         """
         img, speed, data = self.grab_lidar_speed_and_data()
-        rew, terminated = self.reward_function.compute_reward(pos=np.array([data[2], data[3], data[4]]))
-        progress = np.array([self.reward_function.cur_idx / self.reward_function.datalen], dtype='float32')
+        rew, terminated = self.reward_function.compute_reward(
+            pos=np.array([data[2], data[3], data[4]])
+        )
+        progress = np.array(
+            [self.reward_function.cur_idx / self.reward_function.datalen],
+            dtype="float32",
+        )
         self.img_hist.append(img)
-        imgs = np.array(list(self.img_hist), dtype='float32')
+        imgs = np.array(list(self.img_hist), dtype="float32")
         obs = [speed, progress, imgs]
         end_of_track = bool(data[8])
         info = {}
@@ -344,12 +398,16 @@ class TM2020InterfaceLidarProgress(TM2020InterfaceLidar):
         """
         must be a Tuple
         """
-        speed = spaces.Box(low=0.0, high=1000.0, shape=(1, ))
+        speed = spaces.Box(low=0.0, high=1000.0, shape=(1,))
         progress = spaces.Box(low=0.0, high=1.0, shape=(1,))
-        imgs = spaces.Box(low=0.0, high=np.inf, shape=(
-            self.img_hist_len,
-            19,
-        ))  # lidars
+        imgs = spaces.Box(
+            low=0.0,
+            high=np.inf,
+            shape=(
+                self.img_hist_len,
+                19,
+            ),
+        )  # lidars
         return spaces.Tuple((speed, progress, imgs))
 
 

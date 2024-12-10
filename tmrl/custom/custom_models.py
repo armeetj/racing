@@ -631,7 +631,7 @@ class VanillaCNN(Module):
             print(res, accel)
 
         if res:
-            print(f"collision: [{speed, accel}]\n")
+            print(f"collision: [{speed.item(), accel}]\n")
             os.environ["COLLISION_STATUS"] = "1"
         else:
             os.environ["COLLISION_STATUS"] = "0"
