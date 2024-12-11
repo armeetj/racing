@@ -25,10 +25,15 @@ custom ASAC implementation and vision models (DINO + YOLO), and side-exploration
 figures.
 
 ```bash
-[ 44K]  .
-├── [ 16K]  explorations
+
+[ 56K]  .
+├── [8.0K]  docs
+│   └── [4.0K]  img
+├── [ 20K]  explorations
+│   ├── [4.0K]  toy_ppo
 │   ├── [4.0K]  toy_sac - SAC from scratch for inverted double pendulum
-│   └── [4.0K]  yolo - YOLO vision demos (segmentation / masking)
+│   ├── [4.0K]  yolo - YOLO vision demos (segmentation / masking)
+│   └── [4.0K]  yolop
 ├── [4.0K]  figs - important fig generation
 └── [ 20K]  tmrl - modified TMRL lib
     ├── [4.0K]  config
@@ -36,7 +41,7 @@ figures.
     ├── [4.0K]  __pycache__
     └── [4.0K]  tools
 
-  44K used in 10 directories
+56K used in 13 directories
 ```
 
 ## Guide
