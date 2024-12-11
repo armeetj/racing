@@ -1,5 +1,7 @@
 # ASAC for Racing
 
+Armeet Singh Jatyani, Ashug Gurijala, Arnauld Martinez, Jacob Schuster, Ardra Charath
+
 ## Contents
 - [ASAC for Racing](#asac-for-racing)
   - [Contents](#contents)
