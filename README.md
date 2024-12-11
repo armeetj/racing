@@ -18,13 +18,31 @@
 ## Demos
 
 ### Trained Autonomous Racing Models
- yt links
+- https://youtu.be/WTqHnXXDCMM
+- https://youtu.be/Gh_ICtaGQOE
+- https://youtu.be/lPaqiCn0ks0
+- https://youtu.be/a5rasInTcpY
+- https://youtu.be/lOSnBmLKBeg
+- https://youtu.be/Zj_YYC4_8eI
 
 ### Exploration: SAC for Double-Inverted Pendulum
 `explorations/toy_sac`
 
+Full repo [gh/armeetj/sac-pendulum](https://github.com/armeetj/sac-pendulum)
+
+
+https://github.com/user-attachments/assets/8a95bb82-0e4c-4296-a050-814929aa3f20
+
+
+
+https://github.com/user-attachments/assets/d70811ca-e7ba-4bd9-a8f8-0a89237f166b
+
+
+
 ### Exploration: YOLO segmentation
 `explorations/yolo`
+
+https://youtu.be/MXsi_27mi5k
 
 
 ### Exploration: YOLOP Driveable Area Segmentation
