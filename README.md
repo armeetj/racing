@@ -5,50 +5,17 @@ Armeet Singh Jatyani, Ashug Gurijala, Arnauld Martinez, Jacob Schuster, Ardra Ch
 ## Contents
 - [ASAC for Racing](#asac-for-racing)
   - [Contents](#contents)
-  - [Demos](#demos)
-    - [Trained Autonomous Racing Models](#trained-autonomous-racing-models)
-    - [Exploration: SAC for Double-Inverted Pendulum](#exploration-sac-for-double-inverted-pendulum)
-    - [Exploration: YOLO segmentation](#exploration-yolo-segmentation)
-    - [Exploration: YOLOP Driveable Area Segmentation](#exploration-yolop-driveable-area-segmentation)
   - [Structure](#structure)
   - [Guide](#guide)
     - [Environment Setup](#environment-setup)
     - [Checkpoints](#checkpoints)
     - [Weights \& Biases](#weights--biases)
     - [Training Model](#training-model)
+  - [Explorations](#explorations)
+    - [SAC for Double-Inverted Pendulum](#sac-for-double-inverted-pendulum)
+    - [YOLO segmentation](#yolo-segmentation)
+    - [YOLOP Driveable Area Segmentation](#yolop-driveable-area-segmentation)
 
-## Demos
-
-### Trained Autonomous Racing Models
-- https://youtu.be/WTqHnXXDCMM
-- https://youtu.be/Gh_ICtaGQOE
-- https://youtu.be/lPaqiCn0ks0
-- https://youtu.be/a5rasInTcpY
-- https://youtu.be/lOSnBmLKBeg
-- https://youtu.be/Zj_YYC4_8eI
-
-### Exploration: SAC for Double-Inverted Pendulum
-`explorations/toy_sac`
-
-Full repo [gh/armeetj/sac-pendulum](https://github.com/armeetj/sac-pendulum)
-
-
-https://github.com/user-attachments/assets/8a95bb82-0e4c-4296-a050-814929aa3f20
-
-
-
-https://github.com/user-attachments/assets/d70811ca-e7ba-4bd9-a8f8-0a89237f166b
-
-
-
-### Exploration: YOLO segmentation
-`explorations/yolo`
-
-https://youtu.be/MXsi_27mi5k
-
-
-### Exploration: YOLOP Driveable Area Segmentation
-`explorations/yolop`
 
 ## Structure
 
@@ -155,3 +122,29 @@ VISION=1 python tmrl/__main__.py --trainer --wandb
 ![alt text](docs/img/tmrl_trainer.png)
 
 You're done! Watch the plots on WANDB or monitor TrackMania to see the car learn to drive!
+
+
+## Explorations
+
+### SAC for Double-Inverted Pendulum
+`explorations/toy_sac`
+
+Full repo [gh/armeetj/sac-pendulum](https://github.com/armeetj/sac-pendulum)
+
+
+https://github.com/user-attachments/assets/8a95bb82-0e4c-4296-a050-814929aa3f20
+
+
+
+https://github.com/user-attachments/assets/d70811ca-e7ba-4bd9-a8f8-0a89237f166b
+
+
+
+### YOLO segmentation
+`explorations/yolo`
+
+https://youtu.be/MXsi_27mi5k
+
+
+### YOLOP Driveable Area Segmentation
+`explorations/yolop`
