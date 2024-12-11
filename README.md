@@ -3,12 +3,32 @@
 ## Contents
 - [ASAC for Racing](#asac-for-racing)
   - [Contents](#contents)
+  - [Demos](#demos)
+    - [Trained Autonomous Racing Models](#trained-autonomous-racing-models)
+    - [Exploration: SAC for Double-Inverted Pendulum](#exploration-sac-for-double-inverted-pendulum)
+    - [Exploration: YOLO segmentation](#exploration-yolo-segmentation)
+    - [Exploration: YOLOP Driveable Area Segmentation](#exploration-yolop-driveable-area-segmentation)
   - [Structure](#structure)
   - [Guide](#guide)
     - [Environment Setup](#environment-setup)
     - [Checkpoints](#checkpoints)
     - [Weights \& Biases](#weights--biases)
     - [Training Model](#training-model)
+
+## Demos
+
+### Trained Autonomous Racing Models
+ yt links
+
+### Exploration: SAC for Double-Inverted Pendulum
+`explorations/toy_sac`
+
+### Exploration: YOLO segmentation
+`explorations/yolo`
+
+
+### Exploration: YOLOP Driveable Area Segmentation
+`explorations/yolop`
 
 ## Structure
 
