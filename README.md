@@ -153,3 +153,7 @@ https://youtu.be/MXsi_27mi5k
 
 ### YOLOP Driveable Area Segmentation
 `explorations/yolop`
+1. Navigate to the above directory
+2. Place .jpg images of size 1280x720 into the 'inference/images' directory
+3. Run 'python tools/yolo_demo.py --source inference/images'
+4. The segmented images should be in the 'inference/output' directory
