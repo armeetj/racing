@@ -127,3 +127,8 @@ ENV/
 
 # special
 hidden*/
+!trash*/
+.trash*/
+
+# ruff formatter
+.ruff_cache

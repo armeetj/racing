@@ -1,3 +1,6 @@
 setuptools
 numpy
 torch
+tabulate
+ultralytics
+ruff

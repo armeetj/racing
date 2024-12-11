@@ -2,6 +2,7 @@
 
 # standard library imports
 import logging
+import os
 import time
 from collections import deque
 
@@ -74,6 +75,8 @@ class TM2020Interface(RealTimeGymInterface):
         self.constant_penalty = cfg.REWARD_CONFIG["CONSTANT_PENALTY"]
 
         self.initialized = False
+        self.start_time = time.time()
+        self.iter_count = 0
 
     def initialize_common(self):
         if self.gamepad:
@@ -102,6 +105,7 @@ class TM2020Interface(RealTimeGymInterface):
         self.initialized = True
 
     def send_control(self, control):
+        self.iter_count += 1
         """
         Non-blocking function
         Applies the action given by the RL policy
@@ -243,7 +247,8 @@ class TM2020Interface(RealTimeGymInterface):
         rew += self.constant_penalty
         rew = np.float32(rew)
 
-        print("reward:", rew)
+        if self.iter_count % 10 == 0 and os.getenv("DEBUG") == "1":
+            print("reward:", rew)
         return obs, rew, terminated, info
 
     def get_observation_space(self):

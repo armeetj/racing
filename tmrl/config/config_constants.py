@@ -36,24 +36,38 @@ with open(CONFIG_FILE) as f:
 __err_msg = "Perform a clean installation:\n(1) Uninstall TMRL,\n(2) Delete the TmrlData folder,\n(3) Reinstall TMRL."
 assert "__VERSION__" in TMRL_CONFIG, "config.json is outdated. " + __err_msg
 CONFIG_VERSION = TMRL_CONFIG["__VERSION__"]
-assert version.parse(CONFIG_VERSION) >= version.parse(__compatibility__), \
-    f"config.json version ({CONFIG_VERSION}) must be >= {__compatibility__}. " + __err_msg
+assert version.parse(CONFIG_VERSION) >= version.parse(__compatibility__), (
+    f"config.json version ({CONFIG_VERSION}) must be >= {__compatibility__}. "
+    + __err_msg
+)
 
 # GENERAL: ===========================================================
 
 RUN_NAME = TMRL_CONFIG["RUN_NAME"]  # "SACv1_SPINUP_4_LIDAR_pretrained_test_9"
-BUFFERS_MAXLEN = TMRL_CONFIG["BUFFERS_MAXLEN"]  # Maximum length of the local buffers for RolloutWorkers, Server and TrainerInterface
-RW_MAX_SAMPLES_PER_EPISODE = TMRL_CONFIG["RW_MAX_SAMPLES_PER_EPISODE"]  # If this number of timesteps is reached, the RolloutWorker will reset the episode
+BUFFERS_MAXLEN = TMRL_CONFIG[
+    "BUFFERS_MAXLEN"
+]  # Maximum length of the local buffers for RolloutWorkers, Server and TrainerInterface
+RW_MAX_SAMPLES_PER_EPISODE = TMRL_CONFIG[
+    "RW_MAX_SAMPLES_PER_EPISODE"
+]  # If this number of timesteps is reached, the RolloutWorker will reset the episode
 
 PRAGMA_RNN = False  # True to use an RNN, False to use an MLP
 
 CUDA_TRAINING = TMRL_CONFIG["CUDA_TRAINING"]  # True if CUDA, False if CPU (trainer)
-CUDA_INFERENCE = TMRL_CONFIG["CUDA_INFERENCE"]  # True if CUDA, False if CPU (rollout worker)
+CUDA_INFERENCE = TMRL_CONFIG[
+    "CUDA_INFERENCE"
+]  # True if CUDA, False if CPU (rollout worker)
 
-PRAGMA_GAMEPAD = TMRL_CONFIG["VIRTUAL_GAMEPAD"]  # True to use gamepad, False to use keyboard
+PRAGMA_GAMEPAD = TMRL_CONFIG[
+    "VIRTUAL_GAMEPAD"
+]  # True to use gamepad, False to use keyboard
 
-LOCALHOST_WORKER = TMRL_CONFIG["LOCALHOST_WORKER"]  # set to True for RolloutWorkers on the same machine as the Server
-LOCALHOST_TRAINER = TMRL_CONFIG["LOCALHOST_TRAINER"]  # set to True for Trainers on the same machine as the Server
+LOCALHOST_WORKER = TMRL_CONFIG[
+    "LOCALHOST_WORKER"
+]  # set to True for RolloutWorkers on the same machine as the Server
+LOCALHOST_TRAINER = TMRL_CONFIG[
+    "LOCALHOST_TRAINER"
+]  # set to True for Trainers on the same machine as the Server
 PUBLIC_IP_SERVER = TMRL_CONFIG["PUBLIC_IP_SERVER"]
 
 SERVER_IP_FOR_WORKER = PUBLIC_IP_SERVER if not LOCALHOST_WORKER else "127.0.0.1"
@@ -67,9 +81,15 @@ PRAGMA_LIDAR = RTGYM_INTERFACE.endswith("LIDAR")  # True if Lidar, False if imag
 PRAGMA_PROGRESS = RTGYM_INTERFACE.endswith("LIDARPROGRESS")
 if PRAGMA_PROGRESS:
     PRAGMA_LIDAR = True
-LIDAR_BLACK_THRESHOLD = [55, 55, 55]  # [88, 88, 88] for tiny road, [55, 55, 55] FOR BASIC ROAD
+LIDAR_BLACK_THRESHOLD = [
+    55,
+    55,
+    55,
+]  # [88, 88, 88] for tiny road, [55, 55, 55] FOR BASIC ROAD
 REWARD_CONFIG = ENV_CONFIG["REWARD_CONFIG"]
-SLEEP_TIME_AT_RESET = ENV_CONFIG["SLEEP_TIME_AT_RESET"]  # 1.5 to start in a Markov state with the lidar
+SLEEP_TIME_AT_RESET = ENV_CONFIG[
+    "SLEEP_TIME_AT_RESET"
+]  # 1.5 to start in a Markov state with the lidar
 IMG_HIST_LEN = ENV_CONFIG["IMG_HIST_LEN"]  # 4 without RNN, 1 with RNN
 ACT_BUF_LEN = ENV_CONFIG["RTGYM_CONFIG"]["act_buf_len"]
 WINDOW_WIDTH = ENV_CONFIG["WINDOW_WIDTH"]
@@ -79,7 +99,9 @@ IMG_WIDTH = ENV_CONFIG["IMG_WIDTH"] if "IMG_WIDTH" in ENV_CONFIG else 64
 IMG_HEIGHT = ENV_CONFIG["IMG_HEIGHT"] if "IMG_HEIGHT" in ENV_CONFIG else 64
 LINUX_X_OFFSET = ENV_CONFIG["LINUX_X_OFFSET"] if "LINUX_X_OFFSET" in ENV_CONFIG else 64
 LINUX_Y_OFFSET = ENV_CONFIG["LINUX_Y_OFFSET"] if "LINUX_Y_OFFSET" in ENV_CONFIG else 70
-IMG_SCALE_CHECK_ENV = ENV_CONFIG["IMG_SCALE_CHECK_ENV"] if "IMG_SCALE_CHECK_ENV" in ENV_CONFIG else 1.0
+IMG_SCALE_CHECK_ENV = (
+    ENV_CONFIG["IMG_SCALE_CHECK_ENV"] if "IMG_SCALE_CHECK_ENV" in ENV_CONFIG else 1.0
+)
 
 # DEBUGGING AND BENCHMARKING: ===================================
 
@@ -94,7 +116,9 @@ DEBUG_MODE = TMRL_CONFIG["DEBUG_MODE"] if "DEBUG_MODE" in TMRL_CONFIG.keys() els
 PATH_DATA = TMRL_FOLDER
 logging.debug(f" PATH_DATA:{PATH_DATA}")
 
-MODEL_HISTORY = TMRL_CONFIG["SAVE_MODEL_EVERY"]  # 0 for not saving history, x for saving model history every x new model received by RolloutWorker
+MODEL_HISTORY = TMRL_CONFIG[
+    "SAVE_MODEL_EVERY"
+]  # 0 for not saving history, x for saving model history every x new model received by RolloutWorker
 
 MODEL_PATH_WORKER = str(WEIGHTS_FOLDER / (RUN_NAME + ".tmod"))
 MODEL_PATH_SAVE_HISTORY = str(WEIGHTS_FOLDER / (RUN_NAME + "_"))
@@ -110,7 +134,7 @@ WANDB_PROJECT = TMRL_CONFIG["WANDB_PROJECT"]
 WANDB_ENTITY = TMRL_CONFIG["WANDB_ENTITY"]
 WANDB_KEY = TMRL_CONFIG["WANDB_KEY"]
 
-os.environ['WANDB_API_KEY'] = WANDB_KEY
+os.environ["WANDB_API_KEY"] = WANDB_KEY
 
 # NETWORKING: ==================================================
 
@@ -122,9 +146,17 @@ LOCAL_PORT_TRAINER = TMRL_CONFIG["LOCAL_PORT_TRAINER"]
 LOCAL_PORT_WORKER = TMRL_CONFIG["LOCAL_PORT_WORKER"]
 PASSWORD = TMRL_CONFIG["PASSWORD"]
 SECURITY = "TLS" if TMRL_CONFIG["TLS"] else None
-CREDENTIALS_DIRECTORY = TMRL_CONFIG["TLS_CREDENTIALS_DIRECTORY"] if TMRL_CONFIG["TLS_CREDENTIALS_DIRECTORY"] != "" else None
+CREDENTIALS_DIRECTORY = (
+    TMRL_CONFIG["TLS_CREDENTIALS_DIRECTORY"]
+    if TMRL_CONFIG["TLS_CREDENTIALS_DIRECTORY"] != ""
+    else None
+)
 HOSTNAME = TMRL_CONFIG["TLS_HOSTNAME"]
 NB_WORKERS = None if TMRL_CONFIG["NB_WORKERS"] < 0 else TMRL_CONFIG["NB_WORKERS"]
 
-BUFFER_SIZE = TMRL_CONFIG["BUFFER_SIZE"]  # 268435456  # socket buffer size (200 000 000 is large enough for 1000 images right now)
-HEADER_SIZE = TMRL_CONFIG["HEADER_SIZE"]  # fixed number of characters used to describe the data length
+BUFFER_SIZE = TMRL_CONFIG[
+    "BUFFER_SIZE"
+]  # 268435456  # socket buffer size (200 000 000 is large enough for 1000 images right now)
+HEADER_SIZE = TMRL_CONFIG[
+    "HEADER_SIZE"
+]  # fixed number of characters used to describe the data length

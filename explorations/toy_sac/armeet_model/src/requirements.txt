@@ -1,0 +1,5 @@
+numpy
+pdoc3
+argparse
+gymnasium[mujoco]
+keyboard

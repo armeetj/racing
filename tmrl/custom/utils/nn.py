@@ -47,18 +47,31 @@ def copy_shared(model_a):
 
 class PopArt(Module):
     """PopArt http://papers.nips.cc/paper/6076-learning-values-across-many-orders-of-magnitude"""
-    def __init__(self, output_layer, beta: float = 0.0003, zero_debias: bool = True, start_pop: int = 8):
+
+    def __init__(
+        self,
+        output_layer,
+        beta: float = 0.0003,
+        zero_debias: bool = True,
+        start_pop: int = 8,
+    ):
         # zero_debias=True and start_pop=8 seem to improve things a little but (False, 0) works as well
         super().__init__()
         self.start_pop = start_pop
         self.beta = beta
         self.zero_debias = zero_debias
-        self.output_layers = output_layer if isinstance(output_layer, (tuple, list, torch.nn.ModuleList)) else (output_layer, )
+        self.output_layers = (
+            output_layer
+            if isinstance(output_layer, (tuple, list, torch.nn.ModuleList))
+            else (output_layer,)
+        )
         shape = self.output_layers[0].bias.shape
         device = self.output_layers[0].bias.device
         assert all(shape == x.bias.shape for x in self.output_layers)
         self.mean = Parameter(torch.zeros(shape, device=device), requires_grad=False)
-        self.mean_square = Parameter(torch.ones(shape, device=device), requires_grad=False)
+        self.mean_square = Parameter(
+            torch.ones(shape, device=device), requires_grad=False
+        )
         self.std = Parameter(torch.ones(shape, device=device), requires_grad=False)
         self.updates = 0
 
@@ -68,7 +81,9 @@ class PopArt(Module):
         # note that for beta = 1/self.updates the resulting mean, std would be the true mean and std over all past data
 
         new_mean = (1 - beta) * self.mean + beta * targets.mean(0)
-        new_mean_square = (1 - beta) * self.mean_square + beta * (targets * targets).mean(0)
+        new_mean_square = (1 - beta) * self.mean_square + beta * (
+            targets * targets
+        ).mean(0)
         new_std = (new_mean_square - new_mean * new_mean).sqrt().clamp(0.0001, 1e6)
 
         # assert self.std.shape == (1,), 'this has only been tested in 1D'
@@ -102,6 +117,7 @@ class TanhNormal(Distribution):
     """Distribution of X ~ tanh(Z) where Z ~ N(mean, std)
     Adapted from https://github.com/vitchyr/rlkit
     """
+
     def __init__(self, normal_mean, normal_std, epsilon=1e-6):
         self.normal_mean = normal_mean
         self.normal_std = normal_std
@@ -113,9 +129,13 @@ class TanhNormal(Distribution):
         if hasattr(x, "pre_tanh_value"):
             pre_tanh_value = x.pre_tanh_value
         else:
-            pre_tanh_value = (torch.log(1 + x + self.epsilon) - torch.log(1 - x + self.epsilon)) / 2
+            pre_tanh_value = (
+                torch.log(1 + x + self.epsilon) - torch.log(1 - x + self.epsilon)
+            ) / 2
         assert x.dim() == 2 and pre_tanh_value.dim() == 2
-        return self.normal.log_prob(pre_tanh_value) - torch.log(1 - x * x + self.epsilon)
+        return self.normal.log_prob(pre_tanh_value) - torch.log(
+            1 - x * x + self.epsilon
+        )
 
     def sample(self, sample_shape=torch.Size()):
         z = self.normal.sample(sample_shape)
@@ -165,7 +185,7 @@ class RlkitLinear(torch.nn.Linear):
         # this mistake seems to be in rlkit too
         # https://github.com/vitchyr/rlkit/blob/master/rlkit/torch/pytorch_util.py
         fan_in = self.weight.shape[0]  # this is actually fanout!!!
-        bound = 1. / np.sqrt(fan_in)
+        bound = 1.0 / np.sqrt(fan_in)
         self.weight.data.uniform_(-bound, bound)
         self.bias.data.fill_(0.1)
 
@@ -185,7 +205,13 @@ class BasicReLU(torch.nn.Linear):
 
 
 class AffineReLU(BasicReLU):
-    def __init__(self, in_features, out_features, init_weight_bound: float = 1., init_bias: float = 0.):
+    def __init__(
+        self,
+        in_features,
+        out_features,
+        init_weight_bound: float = 1.0,
+        init_bias: float = 0.0,
+    ):
         super().__init__(in_features, out_features)
         bound = init_weight_bound / np.sqrt(in_features)
         self.weight.data.uniform_(-bound, bound)
@@ -194,7 +220,11 @@ class AffineReLU(BasicReLU):
 
 class NormalizedReLU(torch.nn.Sequential):
     def __init__(self, in_features, out_features, prenorm_bias=True):
-        super().__init__(torch.nn.Linear(in_features, out_features, bias=prenorm_bias), torch.nn.LayerNorm(out_features), torch.nn.ReLU())
+        super().__init__(
+            torch.nn.Linear(in_features, out_features, bias=prenorm_bias),
+            torch.nn.LayerNorm(out_features),
+            torch.nn.ReLU(),
+        )
 
 
 class KaimingReLU(torch.nn.Linear):
@@ -202,23 +232,29 @@ class KaimingReLU(torch.nn.Linear):
         super().__init__(in_features, out_features)
         with torch.no_grad():
             kaiming_uniform_(self.weight)
-            self.bias.fill_(0.)
+            self.bias.fill_(0.0)
 
     def forward(self, x):
         x = super().forward(x)
         return torch.relu(x)
 
 
-Linear10 = partial(AffineReLU, init_bias=1.)
+Linear10 = partial(AffineReLU, init_bias=1.0)
 Linear04 = partial(AffineReLU, init_bias=0.4)
 LinearConstBias = partial(AffineReLU, init_bias=0.1)
-LinearZeroBias = partial(AffineReLU, init_bias=0.)
-AffineSimon = partial(AffineReLU, init_weight_bound=0.01, init_bias=1.)
+LinearZeroBias = partial(AffineReLU, init_bias=0.0)
+AffineSimon = partial(AffineReLU, init_weight_bound=0.01, init_bias=1.0)
 
 
 def dqn_conv(n):
-    return torch.nn.Sequential(torch.nn.Conv2d(n, 32, kernel_size=8, stride=4), torch.nn.ReLU(), torch.nn.Conv2d(32, 64, kernel_size=4, stride=2), torch.nn.ReLU(),
-                               torch.nn.Conv2d(64, 64, kernel_size=3, stride=1), torch.nn.ReLU())
+    return torch.nn.Sequential(
+        torch.nn.Conv2d(n, 32, kernel_size=8, stride=4),
+        torch.nn.ReLU(),
+        torch.nn.Conv2d(32, 64, kernel_size=4, stride=2),
+        torch.nn.ReLU(),
+        torch.nn.Conv2d(64, 64, kernel_size=3, stride=1),
+        torch.nn.ReLU(),
+    )
 
 
 def big_conv(n):

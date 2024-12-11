@@ -127,11 +127,8 @@ class RewardFunction:
 
         self.cur_idx = best_index  # finally, we save our new best matching index
 
-        if os.getenv("COLLISION_STATUS") == "1":
-            reward = -1
-
-        if "DEBUG" in os.environ and os.environ["DEBUG"] == "1":
-            print("frame reward: " + str(reward))
+        # if os.getenv("COLLISION_STATUS") == "1":
+        #     reward = -1
 
         return reward, terminated
 

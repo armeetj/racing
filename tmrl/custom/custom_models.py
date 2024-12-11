@@ -1,7 +1,8 @@
 # === Trackmania =======================================================================================================
 
-import os
 # standard library imports
+import os
+import time
 
 # third-party imports
 import numpy as np
@@ -627,8 +628,6 @@ class VanillaCNN(Module):
             speed, gear, rpm, images, act1, act2 = x
 
         res, accel = self.collision_detected(speed)
-        if "DEBUG" in os.environ and os.environ["DEBUG"] == "1":
-            print(res, accel)
 
         if res:
             print(f"collision: [{speed.item(), accel}]\n")
@@ -688,8 +687,6 @@ class DINOCNN(Module):
             speed, gear, rpm, images, act1, act2 = x
 
         res, accel = self.collision_detected(speed)
-        if "DEBUG" in os.environ and os.environ["DEBUG"] == "1":
-            print(res, accel)
 
         if res:
             print(f"collision: [{speed, accel}]\n")
@@ -717,8 +714,12 @@ class SquashedGaussianVanillaCNNActor(TorchActorModule):
         self.mu_layer = nn.Linear(256, dim_act)
         self.log_std_layer = nn.Linear(256, dim_act)
         self.act_limit = act_limit
+        self.iter_count = 0
+        self.start_time = time.time()
 
     def forward(self, obs, test=False, with_logprob=True):
+        self.iter_count += 1
+        start_time = time.time()
         net_out = self.net(obs)
         mu = self.mu_layer(net_out)
         log_std = self.log_std_layer(net_out)
@@ -748,6 +749,15 @@ class SquashedGaussianVanillaCNNActor(TorchActorModule):
 
         # pi_action = pi_action.squeeze()
 
+        if os.getenv("DEBUG") == "1" and self.iter_count % 30 == 0:
+            end_time = time.time()
+            dt = end_time - start_time
+            hz = 1.0 / dt if dt > 0 else float("inf")
+
+            dt_act = end_time - self.start_time
+            hz_act = self.iter_count / dt_act if dt_act > 0 else float(-1)
+            print(f"actual inference rate: {hz_act} inf/s")
+            print(f"max inference rate: {hz} inf/s")
         return pi_action, logp_pi
 
     def act(self, obs, test=False):
@@ -765,6 +775,7 @@ class DINOSquashedActor(TorchActorModule):
         self.mu_layer = nn.Linear(256, dim_act)
         self.log_std_layer = nn.Linear(256, dim_act)
         self.act_limit = act_limit
+        self.start_time = time.time()
 
     # def __getstate__(self):
     #     state = self.__dict__.copy()
@@ -778,6 +789,8 @@ class DINOSquashedActor(TorchActorModule):
     #     self.add_module("dino", self.dino)
 
     def forward(self, obs, test=False, with_logprob=True):
+        start_time = time.time()
+        self.iter_count += 1
         img = obs[3]  # B, N, H, W
         B, N, H, W = img.shape
         img = img.reshape(B * N, H, W)  # B*N, H, W
@@ -827,6 +840,16 @@ class DINOSquashedActor(TorchActorModule):
         pi_action = self.act_limit * pi_action
 
         # pi_action = pi_action.squeeze()
+
+        if os.getenv("DEBUG") == "1" and self.iter_count % 30 == 0:
+            end_time = time.time()
+            dt = end_time - start_time
+            hz = 1.0 / dt if dt > 0 else float("inf")
+
+            dt_act = end_time - self.start_time
+            hz_act = self.iter_count / dt_act if dt_act > 0 else float(-1)
+            print(f"actual inference rate: {hz_act} inf/s")
+            print(f"max inference rate: {hz} inf/s")
 
         return pi_action, logp_pi
 

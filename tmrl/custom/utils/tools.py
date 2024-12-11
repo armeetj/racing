@@ -16,10 +16,10 @@ from tmrl.config.config_constants import LIDAR_BLACK_THRESHOLD
 
 
 class TM2020OpenPlanetClient:
-    def __init__(self, host='127.0.0.1', port=9000, struct_str='<' + 'f' * 11):
+    def __init__(self, host="127.0.0.1", port=9000, struct_str="<" + "f" * 11):
         self._struct_str = struct_str
-        self.nb_floats = self._struct_str.count('f')
-        self.nb_uint64 = self._struct_str.count('Q')
+        self.nb_floats = self._struct_str.count("f")
+        self.nb_uint64 = self._struct_str.count("Q")
         self._nb_bytes = self.nb_floats * 4 + self.nb_uint64 * 8
 
         self._host = host
@@ -28,7 +28,9 @@ class TM2020OpenPlanetClient:
         # Threading attributes:
         self.__lock = Lock()
         self.__data = None
-        self.__t_client = Thread(target=self.__client_thread, args=(), kwargs={}, daemon=True)
+        self.__t_client = Thread(
+            target=self.__client_thread, args=(), kwargs={}, daemon=True
+        )
         self.__t_client.start()
 
     def __client_thread(self):
@@ -39,13 +41,13 @@ class TM2020OpenPlanetClient:
         """
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((self._host, self._port))
-            data_raw = b''
+            data_raw = b""
             while True:  # main loop
                 while len(data_raw) < self._nb_bytes:
                     data_raw += s.recv(1024)
                 div = len(data_raw) // self._nb_bytes
-                data_used = data_raw[(div - 1) * self._nb_bytes:div * self._nb_bytes]
-                data_raw = data_raw[div * self._nb_bytes:]
+                data_used = data_raw[(div - 1) * self._nb_bytes : div * self._nb_bytes]
+                data_raw = data_raw[div * self._nb_bytes :]
                 self.__lock.acquire()
                 self.__data = data_used
                 self.__lock.release()
@@ -69,12 +71,14 @@ class TM2020OpenPlanetClient:
                 if t_start is None:
                     t_start = time.time()
                 t_now = time.time()
-                assert t_now - t_start < timeout, f"OpenPlanet stopped sending data since more than {timeout}s."
+                assert (
+                    t_now - t_start < timeout
+                ), f"OpenPlanet stopped sending data since more than {timeout}s."
                 time.sleep(sleep_if_empty)
         return data
 
 
-def save_ghost(host='127.0.0.1', port=10000):
+def save_ghost(host="127.0.0.1", port=10000):
     """
     Saves the current ghost
 
@@ -103,7 +107,7 @@ class Lidar:
         h, w, _ = im.shape
         self.h = h
         self.w = w
-        self.road_point = (44*h//49, w//2)
+        self.road_point = (44 * h // 49, w // 2)
         min_dist = 20
         list_ax_x = []
         list_ax_y = []
@@ -142,7 +146,13 @@ class Lidar:
         for axis_x, axis_y in zip(self.list_axis_x, self.list_axis_y):
             index = armin(np.all(img[axis_x, axis_y] < self.black_threshold, axis=1))
             if show:
-                img = cv2.line(img, (self.road_point[1], self.road_point[0]), (axis_y[index], axis_x[index]), color, thickness)
+                img = cv2.line(
+                    img,
+                    (self.road_point[1], self.road_point[0]),
+                    (axis_y[index], axis_x[index]),
+                    color,
+                    thickness,
+                )
             index = np.float32(index)
             distances.append(index)
         res = np.array(distances, dtype=np.float32)

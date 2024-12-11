@@ -2,11 +2,12 @@
 import platform
 
 if platform.system() in ("Windows", "Linux"):
-
     import time
 
     def control_gamepad(gamepad, control):
-        assert all(-1.0 <= c <= 1.0 for c in control), "This function accepts only controls between -1.0 and 1.0"
+        assert all(
+            -1.0 <= c <= 1.0 for c in control
+        ), "This function accepts only controls between -1.0 and 1.0"
         if control[0] > 0:  # gas
             gamepad.right_trigger_float(value_float=control[0])
         else:

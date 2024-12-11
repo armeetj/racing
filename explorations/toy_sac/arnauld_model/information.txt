@@ -1,0 +1,5 @@
+To run 650 epochs, the simulation took 32 minutes and 15 seconds (roughly).
+
+Note that actor_9359.h5 is a serialization of the actor model with the highest reward after 650 epochs (reward = 9359).
+
+reward_plot.png shows the reward of the model as it is training. There is a sharp spike around 700 epochs. I suspect the model learned some new information in that timeframe that drastically increased its performance. The model stores this information in its replay buffer and continues to utilize this discovery in future tests.

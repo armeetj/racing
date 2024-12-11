@@ -30,21 +30,25 @@ def record_reward_dist(path_reward=PATH_REWARD, use_keyboard=False):
                 logging.info(f"start recording")
                 is_recording = True
             else:
-                if keyboard.is_pressed('e'):
+                if keyboard.is_pressed("e"):
                     logging.info(f"start recording")
                     is_recording = True
 
         if is_recording:
-            data = client.retrieve_data(sleep_if_empty=0.01)  # we need many points to build a smooth curve
+            data = client.retrieve_data(
+                sleep_if_empty=0.01
+            )  # we need many points to build a smooth curve
             terminated = bool(data[8])
 
             if not use_keyboard:
                 early_stop = False
             else:
-                early_stop = keyboard.is_pressed('q')
+                early_stop = keyboard.is_pressed("q")
 
             if early_stop or terminated:
-                logging.info(f"Computing reward function checkpoints from captured positions...")
+                logging.info(
+                    f"Computing reward function checkpoints from captured positions..."
+                )
                 logging.info(f"Initial number of captured positions: {len(positions)}")
                 positions = np.array(positions)
 
@@ -66,7 +70,9 @@ def record_reward_dist(path_reward=PATH_REWARD, use_keyboard=False):
                         move_by = dst  # remaining distance
 
                 final_positions = np.array(final_positions)
-                logging.info(f"Final number of checkpoints in the reward function: {len(final_positions)}")
+                logging.info(
+                    f"Final number of checkpoints in the reward function: {len(final_positions)}"
+                )
 
                 pickle.dump(final_positions, open(path, "wb"))
                 logging.info(f"All done")
@@ -87,7 +93,10 @@ def line(pt1, pt2, dist):
     vec = pt2 - pt1
     norm = np.linalg.norm(vec)
     if norm < dist:
-        return None, dist - norm  # we couldn't create a new point but we moved by a distance of norm
+        return (
+            None,
+            dist - norm,
+        )  # we couldn't create a new point but we moved by a distance of norm
     else:
         vec_unit = vec / norm
         pt = pt1 + vec_unit * dist
